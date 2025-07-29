@@ -1,189 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Text to Speech Singer - Enhanced</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Rubik&display=swap');
-  body {
-    font-family: 'Rubik', sans-serif;
-    background: #f0f4f8;
-    max-width: 600px;
-    margin: 50px auto;
-    padding: 25px 30px;
-    border-radius: 12px;
-    box-shadow: 0 12px 25px rgba(0,0,0,0.1);
-    color: #222;
-  }
-  h1 {
-    text-align: center;
-    margin-bottom: 25px;
-    color: #3a3a3a;
-  }
-  label {
-    display: block;
-    margin-top: 20px;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #555;
-  }
-  select, textarea, button {
-    width: 100%;
-    border-radius: 8px;
-    border: 2px solid #d0d7de;
-    font-size: 16px;
-    padding: 12px 15px;
-    box-sizing: border-box;
-    transition: border-color 0.3s ease;
-    outline: none;
-  }
-  select:focus, textarea:focus, button:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 5px rgba(59,130,246,0.5);
-  }
-  textarea {
-    height: 140px;
-    resize: vertical;
-    font-family: 'Rubik', sans-serif;
-  }
-  button {
-    margin-top: 25px;
-    background: #3b82f6;
-    color: white;
-    font-weight: 700;
-    cursor: pointer;
-    border: none;
-    user-select: none;
-  }
-  button:hover {
-    background: #2563eb;
-  }
-  #status {
-    margin-top: 15px;
-    min-height: 24px;
-    font-weight: 600;
-    color: #2563eb;
-    text-align: center;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Funny Voice Speaker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 0 20px;
+      text-align: center;
+      direction: ltr;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      font-size: 18px;
+      padding: 10px;
+      margin-bottom: 20px;
+      resize: vertical;
+    }
+    select, button {
+      font-size: 18px;
+      padding: 10px 15px;
+      margin: 10px 5px;
+      cursor: pointer;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
+  <h1 id="title">Write your lyrics and I'll speak them!</h1>
 
-<h1>Text to Speech Singer</h1>
+  <label for="languageSelect" id="languageLabel">Choose language:</label>
+  <select id="languageSelect">
+    <option value="en">English</option>
+    <option value="he">עברית</option>
+  </select>
 
-<label for="languageSelect">Choose Language / בחר שפה:</label>
-<select id="languageSelect">
-  <option value="en" selected>English</option>
-  <option value="he">עברית</option>
-</select>
+  <label for="lyricsInput" id="lyricsLabel">Enter your text:</label>
+  <textarea id="lyricsInput" placeholder="Type your lyrics here..."></textarea>
 
-<label for="voiceSelect">Choose Voice / בחר קול:</label>
-<select id="voiceSelect"></select>
+  <label for="voiceType" id="voiceLabel">Choose a funny voice:</label>
+  <select id="voiceType">
+    <option value="normal">🎙️ Regular</option>
+    <option value="funny">🤪 Squirrel</option>
+    <option value="deep">🎤 Deep</option>
+    <option value="slow">🐢 Granny</option>
+    <option value="fast">🚀 Pizza Guy</option>
+    <option value="robot">🤖 Robot</option>
+  </select>
 
-<label for="lyricsInput">Write your lyrics / כתוב את המילים:</label>
-<textarea id="lyricsInput" placeholder="Type your lyrics here..."></textarea>
+  <br />
+  <button id="speakBtn">Go!</button>
 
-<button id="speakBtn">Speak</button>
+  <script>
+    const speakBtn = document.getElementById('speakBtn');
+    const lyricsInput = document.getElementById('lyricsInput');
+    const voiceType = document.getElementById('voiceType');
+    const languageSelect = document.getElementById('languageSelect');
 
-<div id="status"></div>
+    const title = document.getElementById('title');
+    const languageLabel = document.getElementById('languageLabel');
+    const lyricsLabel = document.getElementById('lyricsLabel');
+    const voiceLabel = document.getElementById('voiceLabel');
 
-<script>
-  const languageSelect = document.getElementById('languageSelect');
-  const voiceSelect = document.getElementById('voiceSelect');
-  const lyricsInput = document.getElementById('lyricsInput');
-  const speakBtn = document.getElementById('speakBtn');
-  const statusDiv = document.getElementById('status');
-
-  let voices = [];
-  let currentLang = languageSelect.value;
-
-  function populateVoiceList() {
-    voices = speechSynthesis.getVoices();
-
-    // סינון קולות לפי שפה
-    const filteredVoices = voices.filter(voice => {
-      if(currentLang === 'he') {
-        return voice.lang.startsWith('he') || voice.lang.startsWith('iw');
+    function getVoiceSettings(type) {
+      switch(type) {
+        case 'funny': return { pitch: 2, rate: 1.5 };
+        case 'deep': return { pitch: 0.6, rate: 1 };
+        case 'slow': return { pitch: 1, rate: 0.5 };
+        case 'fast': return { pitch: 1.3, rate: 1.8 };
+        case 'robot': return { pitch: 1, rate: 1, rate: 0.9 };
+        default: return { pitch: 1, rate: 1 };
       }
-      return voice.lang.startsWith('en');
+    }
+
+    function updateLanguage(lang) {
+      if (lang === 'he') {
+        document.body.dir = 'rtl';
+        title.textContent = 'כתוב מילים ואני אדבר אותן!';
+        languageLabel.textContent = 'בחר שפה:';
+        lyricsLabel.textContent = 'כתוב את הטקסט שלך:';
+        voiceLabel.textContent = 'בחר קול מצחיק:';
+        speakBtn.textContent = 'דבר!';
+        lyricsInput.placeholder = 'כתוב את המילים כאן...';
+      } else {
+        document.body.dir = 'ltr';
+        title.textContent = "Write your lyrics and I'll speak them!";
+        languageLabel.textContent = 'Choose language:';
+        lyricsLabel.textContent = 'Enter your text:';
+        voiceLabel.textContent = 'Choose a funny voice:';
+        speakBtn.textContent = 'Go!';
+        lyricsInput.placeholder = 'Type your lyrics here...';
+      }
+    }
+
+    languageSelect.addEventListener('change', () => {
+      updateLanguage(languageSelect.value);
     });
 
-    voiceSelect.innerHTML = '';
+    speakBtn.addEventListener('click', () => {
+      const text = lyricsInput.value.trim();
+      if (!text) {
+        alert(languageSelect.value === 'he' ? 'כתוב משהו קודם!' : 'Please write some text first!');
+        return;
+      }
 
-    filteredVoices.forEach((voice, i) => {
-      const option = document.createElement('option');
-      option.textContent = `${voice.name} (${voice.lang})${voice.default ? ' — Default' : ''}`;
-      option.value = voices.indexOf(filteredVoices[i]);
-      voiceSelect.appendChild(option);
+      const settings = getVoiceSettings(voiceType.value);
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      utterance.lang = languageSelect.value === 'he' ? 'he-IL' : 'en-US';
+      utterance.pitch = settings.pitch;
+      utterance.rate = settings.rate;
+      utterance.volume = 1;
+
+      window.speechSynthesis.speak(utterance);
     });
 
-    // אם אין קולות מתאימים לפי השפה, תציג את כולם
-    if(filteredVoices.length === 0) {
-      voices.forEach((voice, i) => {
-        const option = document.createElement('option');
-        option.textContent = `${voice.name} (${voice.lang})${voice.default ? ' — Default' : ''}`;
-        option.value = i;
-        voiceSelect.appendChild(option);
-      });
-    }
-  }
-
-  // מחכים לטעינת קולות בדפדפן
-  if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = populateVoiceList;
-  }
-
-  // טען קולות עכשיו אם כבר זמינים
-  populateVoiceList();
-
-  languageSelect.addEventListener('change', () => {
-    currentLang = languageSelect.value;
-
-    // שנה כיוון טקסט ו-placeholder בהתאם לשפה
-    if(currentLang === 'he') {
-      lyricsInput.style.direction = 'rtl';
-      lyricsInput.placeholder = 'הקלד כאן את המילים...';
-    } else {
-      lyricsInput.style.direction = 'ltr';
-      lyricsInput.placeholder = 'Type your lyrics here...';
-    }
-
-    populateVoiceList();
-    statusDiv.textContent = '';
-  });
-
-  speakBtn.addEventListener('click', () => {
-    const text = lyricsInput.value.trim();
-    if(!text) {
-      alert(currentLang === 'he' ? 'אנא כתוב מילים קודם!' : 'Please write some lyrics first!');
-      return;
-    }
-
-    speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = currentLang === 'he' ? 'he-IL' : 'en-US';
-
-    const selectedVoiceIndex = voiceSelect.value;
-    if(voices[selectedVoiceIndex]) {
-      utterance.voice = voices[selectedVoiceIndex];
-    }
-
-    // אופציונלי: שינוי פרמטרים לקול
-    utterance.pitch = 1;
-    utterance.rate = 1;
-    utterance.volume = 1;
-
-    statusDiv.textContent = currentLang === 'he' ? 'מדבר...' : 'Speaking...';
-
-    utterance.onend = () => {
-      statusDiv.textContent = currentLang === 'he' ? 'סיום הדיבור' : 'Finished speaking';
-    };
-
-    speechSynthesis.speak(utterance);
-  });
-</script>
-
+    // Initialize with default language
+    updateLanguage(languageSelect.value);
+  </script>
 </body>
 </html>
