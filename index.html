@@ -3,108 +3,236 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sing My Lyrics 🎤</title>
+  <title>Text to Speech Singer</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
     body {
-      background: linear-gradient(135deg, #222, #444);
-      font-family: 'Segoe UI', sans-serif;
-      color: #fff;
-      max-width: 700px;
-      margin: 60px auto;
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+      font-family: 'Arial', sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 0 20px;
       text-align: center;
+      background: linear-gradient(270deg, #ff9a9e, #fad0c4, #fad0c4, #ff9a9e);
+      background-size: 800% 800%;
+      animation: gradientBG 20s ease infinite;
+      color: #333;
     }
+
+    @keyframes gradientBG {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+
     h1 {
-      font-size: 2.5em;
-      margin-bottom: 10px;
-      color: #ffcc00;
-      text-shadow: 1px 1px 10px #000;
+      font-family: 'Fredoka One', cursive;
+      font-size: 2.8rem;
+      text-shadow: 2px 2px 4px #fff6f6;
+      margin-bottom: 20px;
     }
+
     textarea {
       width: 100%;
-      height: 160px;
+      height: 150px;
       font-size: 18px;
       padding: 15px;
-      margin-top: 20px;
-      border-radius: 10px;
-      border: none;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      border: 2px solid #ff6f91;
       resize: vertical;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
-      font-weight: 500;
-      color: #222;
+      box-shadow: 0 4px 10px rgba(255,111,145,0.3);
+      transition: border-color 0.3s;
     }
+
+    textarea:focus {
+      border-color: #ff2e63;
+      outline: none;
+      box-shadow: 0 6px 15px rgba(255,46,99,0.6);
+    }
+
     button {
-      margin-top: 25px;
-      font-size: 20px;
-      font-weight: bold;
-      padding: 15px 40px;
-      background-color: #ff4081;
+      font-size: 18px;
+      padding: 12px 30px;
+      margin: 10px 8px;
+      cursor: pointer;
       border: none;
       border-radius: 30px;
+      background: #ff2e63;
       color: white;
-      cursor: pointer;
-      transition: 0.3s ease;
-      box-shadow: 0 5px 15px rgba(255,64,129,0.5);
+      box-shadow: 0 6px 15px rgba(255,46,99,0.7);
+      transition: all 0.3s ease;
+      user-select: none;
+      position: relative;
+      overflow: hidden;
     }
+
     button:hover {
-      background-color: #e91e63;
+      background: #ff497a;
+      box-shadow: 0 8px 20px rgba(255,73,122,0.8);
+      transform: scale(1.05);
     }
-    footer {
-      margin-top: 50px;
-      font-size: 14px;
-      color: #aaa;
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    /* כפתור עם אפקט בועות */
+    button.go-btn::after {
+      content: '';
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      top: -50%;
+      left: -50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 20%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+      border-radius: 50%;
+      animation: bubblePulse 2s infinite;
+    }
+
+    button.go-btn:hover::after {
+      opacity: 1;
+    }
+
+    @keyframes bubblePulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.3);
+      }
+    }
+
+    select {
+      font-size: 16px;
+      padding: 10px 15px;
+      margin-top: 15px;
+      border-radius: 15px;
+      border: 2px solid #ff6f91;
+      box-shadow: 0 4px 10px rgba(255,111,145,0.3);
+      transition: border-color 0.3s;
+    }
+
+    select:focus {
+      border-color: #ff2e63;
+      outline: none;
+      box-shadow: 0 6px 15px rgba(255,46,99,0.6);
+    }
+
+    #typingEffect {
+      margin-top: 20px;
+      font-size: 20px;
+      color: #ff2e63;
+      min-height: 30px;
+      font-weight: bold;
+      font-family: 'Courier New', Courier, monospace;
+      letter-spacing: 0.05em;
+      user-select: none;
     }
   </style>
 </head>
 <body>
-  <h1>Sing My Lyrics 🎤</h1>
-  <textarea id="lyricsInput" placeholder="Write your lyrics here..."></textarea>
+  <h1>Write your lyrics and I'll sing them!</h1>
+  <textarea id="lyricsInput" placeholder="Type your lyrics here..."></textarea>
   <br />
-  <button id="speakBtn">Sing It!</button>
+  <button id="speakBtn" class="go-btn">Go</button>
+  <button id="stopBtn" style="background:#333; box-shadow:none; margin-left:10px;">Stop</button>
 
-  <footer>Made by Yoni ✨ | Powered by Web Speech API</footer>
+  <br />
+  <label for="voiceSelect">Choose voice:</label>
+  <br />
+  <select id="voiceSelect"></select>
+
+  <div id="typingEffect"></div>
 
   <script>
     const speakBtn = document.getElementById('speakBtn');
+    const stopBtn = document.getElementById('stopBtn');
     const lyricsInput = document.getElementById('lyricsInput');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const typingEffectDiv = document.getElementById('typingEffect');
 
-    const happyWords = ['burn', 'light', 'shine', 'fire', 'hope', 'love', 'flame', 'sun'];
-    const sadWords = ['dark', 'shame', 'rain', 'sin', 'damned', 'pain', 'cry', 'lonely'];
+    let voices = [];
+    let typingInterval;
+    let currentUtterance = null;
 
-    function getPitchForWord(word) {
-      if (happyWords.includes(word.toLowerCase())) return 1.5;
-      if (sadWords.includes(word.toLowerCase())) return 0.7;
-      return 1.0;
+    function populateVoices() {
+      voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = '';
+      voices.forEach((voice, i) => {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${voice.name} (${voice.lang})${voice.default ? ' — default' : ''}`;
+        voiceSelect.appendChild(option);
+      });
     }
 
-    async function speakWithEffects(text) {
-      const words = text.split(/\s+/).filter(w => w.length > 0);
-      for (const word of words) {
-        const utterance = new SpeechSynthesisUtterance(word);
-        utterance.lang = 'en-US';
-        utterance.pitch = getPitchForWord(word);
-        utterance.rate = 1;
-        utterance.volume = 1;
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = populateVoices;
+    }
+    populateVoices();
 
-        await new Promise(resolve => {
-          utterance.onend = resolve;
-          window.speechSynthesis.speak(utterance);
-        });
-      }
+    function typeEffect(text, onComplete) {
+      let i = 0;
+      typingEffectDiv.textContent = '';
+      clearInterval(typingInterval);
+
+      typingInterval = setInterval(() => {
+        typingEffectDiv.textContent += text.charAt(i);
+        i++;
+        if (i >= text.length) {
+          clearInterval(typingInterval);
+          if(onComplete) onComplete();
+        }
+      }, 50);
+    }
+
+    // פונקציה אקראית לגובה וקצב קול בשביל אפקט מגניב יותר
+    function randomPitchRate() {
+      const pitch = (Math.random() * 0.6 + 0.8).toFixed(2); // בין 0.8 ל 1.4
+      const rate = (Math.random() * 0.4 + 0.7).toFixed(2);  // בין 0.7 ל 1.1
+      return { pitch: Number(pitch), rate: Number(rate) };
     }
 
     speakBtn.addEventListener('click', () => {
       const text = lyricsInput.value.trim();
       if (!text) {
-        alert('Please write something first!');
+        alert('Please write some lyrics first!');
         return;
       }
-      if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
-      }
-      speakWithEffects(text);
+
+      speechSynthesis.cancel();
+
+      // הצגת אפקט הקלדה לפני הדיבור
+      typeEffect(text, () => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        currentUtterance = utterance;
+
+        const selectedVoiceIndex = voiceSelect.value;
+        if (voices[selectedVoiceIndex]) {
+          utterance.voice = voices[selectedVoiceIndex];
+        }
+
+        // הגדרת pitch ו rate אקראיים
+        const { pitch, rate } = randomPitchRate();
+        utterance.pitch = pitch;
+        utterance.rate = rate;
+        utterance.volume = 1;
+
+        utterance.onend = () => {
+          typingEffectDiv.textContent = '';
+        }
+
+        speechSynthesis.speak(utterance);
+      });
+    });
+
+    stopBtn.addEventListener('click', () => {
+      speechSynthesis.cancel();
+      typingEffectDiv.textContent = '';
     });
   </script>
 </body>
