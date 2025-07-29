@@ -25,11 +25,6 @@
       width: 90%;
       max-width: 500px;
     }
-    #characterImg {
-      width: 200px;
-      margin: 20px auto;
-      border-radius: 10px;
-    }
     #registrationForm {
       display: none;
       margin-top: 20px;
@@ -72,8 +67,6 @@
     <option value="deepman">💪 Deep Voice</option>
   </select>
 
-  <img id="characterImg" src="" alt="Character" />
-
   <textarea id="textInput" placeholder="Write your text here..."></textarea>
   <br />
   <button id="goBtn">Go</button>
@@ -90,20 +83,19 @@
     const langSelect = document.getElementById('langSelect');
     const characterSelect = document.getElementById('characterSelect');
     const textInput = document.getElementById('textInput');
-    const characterImg = document.getElementById('characterImg');
     const goBtn = document.getElementById('goBtn');
     const registrationForm = document.getElementById('registrationForm');
     const title = document.getElementById('title');
     const regTitle = document.getElementById('regTitle');
     const characterLabel = document.getElementById('characterLabel');
 
-    const characterData = {
-      pizza: { img: 'https://i.imgur.com/4JgX4xT.png', pitch: 1, rate: 1, gender: 'male' },
-      robot: { img: 'https://i.imgur.com/LXz3Wsm.png', pitch: 0.8, rate: 0.8, gender: 'neutral' },
-      baby: { img: 'https://i.imgur.com/RE91PaE.png', pitch: 2.0, rate: 1.5, gender: 'male' },
-      rocker: { img: 'https://i.imgur.com/yFKGkTp.png', pitch: 0.7, rate: 1.2, gender: 'male' },
-      girl: { img: 'https://i.imgur.com/Vi4nLRk.png', pitch: 1.7, rate: 1.2, gender: 'female' },
-      deepman: { img: 'https://i.imgur.com/szZUZnH.png', pitch: 0.5, rate: 0.8, gender: 'male' }
+    const characterSettings = {
+      pizza: { pitch: 1.5, rate: 1.2 },
+      robot: { pitch: 1.0, rate: 0.9 },
+      baby: { pitch: 2.0, rate: 1.5 },
+      rocker: { pitch: 0.7, rate: 1.1 },
+      girl: { pitch: 1.6, rate: 1.2 },
+      deepman: { pitch: 0.5, rate: 0.8 }
     };
 
     let usedWords = 0;
@@ -126,13 +118,6 @@
       }
     });
 
-    characterSelect.addEventListener('change', updateImage);
-    function updateImage() {
-      const selected = characterSelect.value;
-      characterImg.src = characterData[selected].img;
-    }
-    updateImage();
-
     goBtn.addEventListener('click', () => {
       const text = textInput.value.trim();
       const wordCount = text.split(/\s+/).filter(Boolean).length;
@@ -151,24 +136,19 @@
 
       const utterance = new SpeechSynthesisUtterance(text);
       const selected = characterSelect.value;
-      utterance.pitch = characterData[selected].pitch;
-      utterance.rate = characterData[selected].rate;
+      utterance.pitch = characterSettings[selected].pitch;
+      utterance.rate = characterSettings[selected].rate;
 
-      // קול זמין לפי שפה ומין
-      const voices = window.speechSynthesis.getVoices();
-      const gender = characterData[selected].gender;
       const lang = langSelect.value === 'he' ? 'he-IL' : 'en-US';
+      utterance.lang = lang;
 
-      const filtered = voices.filter(v =>
-        v.lang === lang &&
-        (gender === 'neutral' || (gender === 'male' ? v.name.includes('Male') : v.name.includes('Female')))
-      );
-
-      if (filtered.length > 0) {
-        utterance.voice = filtered[0];
+      // קח כל קול זמין לשפה המבוקשת
+      const voices = window.speechSynthesis.getVoices();
+      const matchingVoices = voices.filter(v => v.lang === lang);
+      if (matchingVoices.length > 0) {
+        utterance.voice = matchingVoices[0];
       }
 
-      utterance.lang = lang;
       speechSynthesis.speak(utterance);
     });
 
@@ -182,13 +162,12 @@
         return;
       }
 
-      // כאן אפשר לשמור את הנתונים ב-DB אם אתה מחבר לשרת בעתיד
-      alert("You're registered! Enjoy unlimited words 😎");
+      alert("You're registered! Enjoy unlimited words 🎉");
       registrationForm.style.display = 'none';
       usedWords = 0;
     }
 
-    // לטעון קולות בהתחלה
+    // לוודא שהקולות נטענים
     window.speechSynthesis.onvoiceschanged = () => {
       window.speechSynthesis.getVoices();
     };
