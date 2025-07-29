@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Text to Speech Singer</title>
+  <title>Text to Speech Singer with Funny Voices</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
 
@@ -17,6 +17,7 @@
       background-size: 800% 800%;
       animation: gradientBG 20s ease infinite;
       color: #333;
+      direction: ltr;
     }
 
     @keyframes gradientBG {
@@ -43,6 +44,13 @@
       resize: vertical;
       box-shadow: 0 4px 10px rgba(255,111,145,0.3);
       transition: border-color 0.3s;
+      direction: ltr;
+      text-align: left;
+    }
+
+    textarea.rtl {
+      direction: rtl;
+      text-align: right;
     }
 
     textarea:focus {
@@ -114,6 +122,7 @@
       border: 2px solid #ff6f91;
       box-shadow: 0 4px 10px rgba(255,111,145,0.3);
       transition: border-color 0.3s;
+      user-select: none;
     }
 
     select:focus {
@@ -132,17 +141,57 @@
       letter-spacing: 0.05em;
       user-select: none;
     }
+
+    #languageSelect {
+      margin-bottom: 15px;
+    }
+
+    #voiceModeSelect {
+      margin-top: 15px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 15px;
+      border: 2px solid #ff6f91;
+      box-shadow: 0 4px 10px rgba(255,111,145,0.3);
+      user-select: none;
+      transition: border-color 0.3s;
+    }
+
+    #voiceModeSelect:focus {
+      border-color: #ff2e63;
+      outline: none;
+      box-shadow: 0 6px 15px rgba(255,46,99,0.6);
+    }
   </style>
 </head>
 <body>
-  <h1>Write your lyrics and I'll sing them!</h1>
+  <h1 id="title">Write your lyrics and I'll sing them!</h1>
+
+  <label for="languageSelect" id="languageLabel">Choose language / בחר שפה:</label><br />
+  <select id="languageSelect">
+    <option value="en" selected>English</option>
+    <option value="he">עברית</option>
+  </select>
+
+  <br />
+
+  <label for="voiceModeSelect" id="voiceModeLabel">Choose voice mode / בחר מצב קול:</label><br />
+  <select id="voiceModeSelect">
+    <option value="normal" selected>Normal (Regular voice)</option>
+    <option value="pizza">Pizza Delivery (Fast High Pitch)</option>
+    <option value="robot">Robot (Monotone)</option>
+    <option value="monster">Monster (Low Pitch Slow)</option>
+    <option value="chipmunk">Chipmunk (Very High Pitch Fast)</option>
+  </select>
+
   <textarea id="lyricsInput" placeholder="Type your lyrics here..."></textarea>
   <br />
   <button id="speakBtn" class="go-btn">Go</button>
   <button id="stopBtn" style="background:#333; box-shadow:none; margin-left:10px;">Stop</button>
 
   <br />
-  <label for="voiceSelect">Choose voice:</label>
+  <label for="voiceSelect" id="voiceLabel">Choose voice:</label>
   <br />
   <select id="voiceSelect"></select>
 
@@ -154,20 +203,86 @@
     const lyricsInput = document.getElementById('lyricsInput');
     const voiceSelect = document.getElementById('voiceSelect');
     const typingEffectDiv = document.getElementById('typingEffect');
+    const languageSelect = document.getElementById('languageSelect');
+    const voiceModeSelect = document.getElementById('voiceModeSelect');
+
+    const title = document.getElementById('title');
+    const languageLabel = document.getElementById('languageLabel');
+    const voiceLabel = document.getElementById('voiceLabel');
+    const voiceModeLabel = document.getElementById('voiceModeLabel');
 
     let voices = [];
     let typingInterval;
     let currentUtterance = null;
+    let currentLang = 'en';
+
+    const textByLanguage = {
+      en: {
+        title: "Write your lyrics and I'll sing them!",
+        languageLabel: "Choose language / בחר שפה:",
+        voiceModeLabel: "Choose voice mode / בחר מצב קול:",
+        speakBtn: "Go",
+        stopBtn: "Stop",
+        voiceLabel: "Choose voice:",
+        textareaPlaceholder: "Type your lyrics here...",
+        direction: "ltr",
+        textareaClass: '',
+      },
+      he: {
+        title: "כתוב את המילים ואשיר לך!",
+        languageLabel: "בחר שפה / Choose language:",
+        voiceModeLabel: "בחר מצב קול / Choose voice mode:",
+        speakBtn: "לך",
+        stopBtn: "עצור",
+        voiceLabel: "בחר קול:",
+        textareaPlaceholder: "הקלד כאן את המילים...",
+        direction: "rtl",
+        textareaClass: 'rtl',
+      }
+    };
+
+    function updateTexts(lang) {
+      const texts = textByLanguage[lang];
+      title.textContent = texts.title;
+      languageLabel.textContent = texts.languageLabel;
+      speakBtn.textContent = texts.speakBtn;
+      stopBtn.textContent = texts.stopBtn;
+      voiceLabel.textContent = texts.voiceLabel;
+      voiceModeLabel.textContent = texts.voiceModeLabel;
+      lyricsInput.placeholder = texts.textareaPlaceholder;
+      lyricsInput.className = texts.textareaClass;
+      document.body.style.direction = texts.direction;
+    }
 
     function populateVoices() {
       voices = speechSynthesis.getVoices();
+
+      // סינון לפי שפת הדפדפן - נרצה להציג קולות מתאימים לשפה הנבחרת:
+      const filteredVoices = voices.filter(voice => {
+        if(currentLang === 'he') {
+          return voice.lang.startsWith('he') || voice.lang.startsWith('iw');
+        } else {
+          return voice.lang.startsWith('en');
+        }
+      });
+
       voiceSelect.innerHTML = '';
-      voices.forEach((voice, i) => {
+      filteredVoices.forEach((voice, i) => {
         const option = document.createElement('option');
-        option.value = i;
-        option.textContent = `${voice.name} (${voice.lang})${voice.default ? ' — default' : ''}`;
+        option.value = voices.indexOf(filteredVoices[i]); // אינדקס במערך המלא
+        option.textContent = `${filteredVoices[i].name} (${filteredVoices[i].lang})${filteredVoices[i].default ? ' — default' : ''}`;
         voiceSelect.appendChild(option);
       });
+
+      // אם אין קולות מתאימים, תוסיף את כולם (בטחון)
+      if(filteredVoices.length === 0) {
+        voices.forEach((voice, i) => {
+          const option = document.createElement('option');
+          option.value = i;
+          option.textContent = `${voice.name} (${voice.lang})${voice.default ? ' — default' : ''}`;
+          voiceSelect.appendChild(option);
+        });
+      }
     }
 
     if (speechSynthesis.onvoiceschanged !== undefined) {
@@ -190,41 +305,57 @@
       }, 50);
     }
 
-    // פונקציה אקראית לגובה וקצב קול בשביל אפקט מגניב יותר
+    // פונקציה אקראית (אם רוצים) לגובה וקצב קול
     function randomPitchRate() {
-      const pitch = (Math.random() * 0.6 + 0.8).toFixed(2); // בין 0.8 ל 1.4
-      const rate = (Math.random() * 0.4 + 0.7).toFixed(2);  // בין 0.7 ל 1.1
+      const pitch = (Math.random() * 0.6 + 0.8).toFixed(2);
+      const rate = (Math.random() * 0.4 + 0.7).toFixed(2);
       return { pitch: Number(pitch), rate: Number(rate) };
     }
+
+    // קולות מצחיקים מוגדרים מראש לפי pitch ו-rate
+    const funnyVoicesParams = {
+      pizza: { pitch: 1.8, rate: 1.8 },       // מהיר וגבוה - שליח פיצה מהיר
+      robot: { pitch: 1.0, rate: 0.7 },       // קצב איטי יותר, פיץ' רגיל - רובוט מונוטוני
+      monster: { pitch: 0.5, rate: 0.6 },     // קול נמוך ואיטי - מפלצת
+      chipmunk: { pitch: 2.5, rate: 2.0 },    // מאוד גבוה ומהיר - סנאי חמוד
+    };
 
     speakBtn.addEventListener('click', () => {
       const text = lyricsInput.value.trim();
       if (!text) {
-        alert('Please write some lyrics first!');
+        alert(currentLang === 'he' ? 'אנא כתוב מילים קודם!' : 'Please write some lyrics first!');
         return;
       }
 
       speechSynthesis.cancel();
 
-      // הצגת אפקט הקלדה לפני הדיבור
       typeEffect(text, () => {
         const utterance = new SpeechSynthesisUtterance(text);
         currentUtterance = utterance;
 
-        const selectedVoiceIndex = voiceSelect.value;
-        if (voices[selectedVoiceIndex]) {
-          utterance.voice = voices[selectedVoiceIndex];
+        utterance.lang = currentLang === 'he' ? 'he-IL' : 'en-US';
+
+        const voiceMode = voiceModeSelect.value;
+        if (voiceMode === 'normal') {
+          // קול רגיל - נבחר קול + ערכי pitch ו-rate אקראיים
+          const selectedVoiceIndex = voiceSelect.value;
+          if (voices[selectedVoiceIndex]) {
+            utterance.voice = voices[selectedVoiceIndex];
+          }
+          const { pitch, rate } = randomPitchRate();
+          utterance.pitch = pitch;
+          utterance.rate = rate;
+        } else {
+          // קולות מצחיקים - אין שימוש בקול בדפדפן ספציפי, רק pitch ו-rate
+          utterance.pitch = funnyVoicesParams[voiceMode].pitch;
+          utterance.rate = funnyVoicesParams[voiceMode].rate;
         }
 
-        // הגדרת pitch ו rate אקראיים
-        const { pitch, rate } = randomPitchRate();
-        utterance.pitch = pitch;
-        utterance.rate = rate;
         utterance.volume = 1;
 
         utterance.onend = () => {
           typingEffectDiv.textContent = '';
-        }
+        };
 
         speechSynthesis.speak(utterance);
       });
@@ -234,6 +365,15 @@
       speechSynthesis.cancel();
       typingEffectDiv.textContent = '';
     });
+
+    languageSelect.addEventListener('change', () => {
+      currentLang = languageSelect.value;
+      updateTexts(currentLang);
+      populateVoices();
+    });
+
+    // הגדר לשפה ברירת מחדל בהתחלה
+    updateTexts(currentLang);
   </script>
 </body>
 </html>
