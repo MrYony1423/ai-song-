@@ -3,131 +3,123 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Funny Voice Speaker</title>
+  <title>Text to Speech</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       max-width: 600px;
       margin: 40px auto;
-      padding: 0 20px;
+      padding: 20px;
       text-align: center;
-      direction: ltr;
-    }
-    h1 {
-      margin-bottom: 20px;
+      background-color: #f8f8f8;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
     textarea {
       width: 100%;
-      height: 150px;
+      height: 140px;
       font-size: 18px;
       padding: 10px;
       margin-bottom: 20px;
       resize: vertical;
     }
-    select, button {
+    button, select {
       font-size: 18px;
       padding: 10px 15px;
-      margin: 10px 5px;
-      cursor: pointer;
+      margin: 10px;
+      border-radius: 6px;
     }
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
+    h1 {
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <h1 id="title">Write your lyrics and I'll speak them!</h1>
+  <h1 id="title">Write your lyrics and I'll speak!</h1>
 
-  <label for="languageSelect" id="languageLabel">Choose language:</label>
   <select id="languageSelect">
     <option value="en">English</option>
     <option value="he">עברית</option>
   </select>
 
-  <label for="lyricsInput" id="lyricsLabel">Enter your text:</label>
-  <textarea id="lyricsInput" placeholder="Type your lyrics here..."></textarea>
-
-  <label for="voiceType" id="voiceLabel">Choose a funny voice:</label>
-  <select id="voiceType">
-    <option value="normal">🎙️ Regular</option>
-    <option value="funny">🤪 Squirrel</option>
+  <select id="voiceStyleSelect">
+    <option value="normal">🗣️ Regular</option>
+    <option value="funny">🤪 Funny</option>
     <option value="deep">🎤 Deep</option>
-    <option value="slow">🐢 Granny</option>
-    <option value="fast">🚀 Pizza Guy</option>
     <option value="robot">🤖 Robot</option>
+    <option value="fast">🚀 Pizza Guy</option>
   </select>
 
-  <br />
-  <button id="speakBtn">Go!</button>
+  <textarea id="textInput" placeholder="Type something..."></textarea><br>
+  <button id="speakBtn">Go</button>
+  <button id="stopBtn">Stop</button>
 
   <script>
     const speakBtn = document.getElementById('speakBtn');
-    const lyricsInput = document.getElementById('lyricsInput');
-    const voiceType = document.getElementById('voiceType');
+    const stopBtn = document.getElementById('stopBtn');
+    const textInput = document.getElementById('textInput');
+    const voiceStyleSelect = document.getElementById('voiceStyleSelect');
     const languageSelect = document.getElementById('languageSelect');
-
     const title = document.getElementById('title');
-    const languageLabel = document.getElementById('languageLabel');
-    const lyricsLabel = document.getElementById('lyricsLabel');
-    const voiceLabel = document.getElementById('voiceLabel');
 
-    function getVoiceSettings(type) {
-      switch(type) {
-        case 'funny': return { pitch: 2, rate: 1.5 };
-        case 'deep': return { pitch: 0.6, rate: 1 };
-        case 'slow': return { pitch: 1, rate: 0.5 };
-        case 'fast': return { pitch: 1.3, rate: 1.8 };
-        case 'robot': return { pitch: 1, rate: 1, rate: 0.9 };
-        default: return { pitch: 1, rate: 1 };
-      }
+    let voices = [];
+
+    function loadVoices() {
+      voices = window.speechSynthesis.getVoices();
     }
 
-    function updateLanguage(lang) {
-      if (lang === 'he') {
-        document.body.dir = 'rtl';
-        title.textContent = 'כתוב מילים ואני אדבר אותן!';
-        languageLabel.textContent = 'בחר שפה:';
-        lyricsLabel.textContent = 'כתוב את הטקסט שלך:';
-        voiceLabel.textContent = 'בחר קול מצחיק:';
-        speakBtn.textContent = 'דבר!';
-        lyricsInput.placeholder = 'כתוב את המילים כאן...';
-      } else {
-        document.body.dir = 'ltr';
-        title.textContent = "Write your lyrics and I'll speak them!";
-        languageLabel.textContent = 'Choose language:';
-        lyricsLabel.textContent = 'Enter your text:';
-        voiceLabel.textContent = 'Choose a funny voice:';
-        speakBtn.textContent = 'Go!';
-        lyricsInput.placeholder = 'Type your lyrics here...';
-      }
-    }
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
+
+    const styleSettings = {
+      normal: { pitch: 1, rate: 1 },
+      funny: { pitch: 1.8, rate: 1.4 },
+      deep: { pitch: 0.6, rate: 1 },
+      robot: { pitch: 1, rate: 0.85 },
+      fast: { pitch: 1.3, rate: 1.8 }
+    };
 
     languageSelect.addEventListener('change', () => {
-      updateLanguage(languageSelect.value);
+      const lang = languageSelect.value;
+      if (lang === 'he') {
+        document.documentElement.lang = 'he';
+        title.textContent = 'כתוב טקסט ואני אדבר!';
+        speakBtn.textContent = 'לך';
+        stopBtn.textContent = 'עצור';
+        textInput.placeholder = 'כתוב משהו כאן...';
+      } else {
+        document.documentElement.lang = 'en';
+        title.textContent = "Write your lyrics and I'll speak!";
+        speakBtn.textContent = 'Go';
+        stopBtn.textContent = 'Stop';
+        textInput.placeholder = 'Type something...';
+      }
     });
 
     speakBtn.addEventListener('click', () => {
-      const text = lyricsInput.value.trim();
-      if (!text) {
-        alert(languageSelect.value === 'he' ? 'כתוב משהו קודם!' : 'Please write some text first!');
-        return;
+      const text = textInput.value.trim();
+      if (!text) return alert('Please enter text first.');
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      const lang = languageSelect.value === 'he' ? 'he-IL' : 'en-US';
+      utterance.lang = lang;
+
+      const available = voices.filter(v => v.lang.startsWith(lang));
+      if (available.length > 0) {
+        utterance.voice = available[0];
       }
 
-      const settings = getVoiceSettings(voiceType.value);
-      const utterance = new SpeechSynthesisUtterance(text);
-
-      utterance.lang = languageSelect.value === 'he' ? 'he-IL' : 'en-US';
-      utterance.pitch = settings.pitch;
-      utterance.rate = settings.rate;
+      const style = styleSettings[voiceStyleSelect.value];
+      utterance.pitch = style.pitch;
+      utterance.rate = style.rate;
       utterance.volume = 1;
 
       window.speechSynthesis.speak(utterance);
     });
 
-    // Initialize with default language
-    updateLanguage(languageSelect.value);
+    stopBtn.addEventListener('click', () => {
+      window.speechSynthesis.cancel();
+    });
   </script>
 </body>
 </html>
